@@ -15,8 +15,8 @@ void init_chardisp_pins() {
     gpio_set_function(SPI_DISP_CSn, GPIO_FUNC_SPI);
     gpio_set_function(SPI_DISP_SCK, GPIO_FUNC_SPI);
     gpio_set_function(SPI_DISP_TX, GPIO_FUNC_SPI);
-    spi_init(spi0, 10000);
-    spi_set_format(spi0, 9, 0, 0, 1);   
+    spi_init(spi1, 10000);
+    spi_set_format(spi1, 9, 0, 0, 1);   
 }
 
 void send_spi_cmd(spi_inst_t* spi, uint16_t value) {
@@ -36,33 +36,33 @@ void cd_init() {
     // fill in
     sleep_ms(1);
     //function set
-    send_spi_cmd(spi0, 0b1000000000111100);
+    send_spi_cmd(spi1, 0b1000000000111100);
     sleep_us(40);
     //display on/off
-    send_spi_cmd(spi0, 0b1000000000001100);
+    send_spi_cmd(spi1, 0b1000000000001100);
     sleep_us(40);
     //clear display
-    send_spi_cmd(spi0, 0b1000000000000001);
+    send_spi_cmd(spi1, 0b1000000000000001);
     sleep_ms(2);
     //entry mode set
-    send_spi_cmd(spi0, 0b1000000000000110);
+    send_spi_cmd(spi1, 0b1000000000000110);
     sleep_us(40); 
 }
 
 void cd_display1(const char *str) {
     // fill in
-    send_spi_cmd(spi0, 0b1000000010000000);
+    send_spi_cmd(spi1, 0b1000000010000000);
     for(int i = 0; i <= 15; i++)
     {
-        send_spi_data(spi0, str[i]);
+        send_spi_data(spi1, str[i]);
     }
 }
 void cd_display2(const char *str) {
     // fill in
-    send_spi_cmd(spi0, 0b1000000011000000);
+    send_spi_cmd(spi1, 0b1000000011000000);
     for(int i = 0; i <= 15; i++)
     {
-        send_spi_data(spi0, str[i]);
+        send_spi_data(spi1, str[i]);
     }
 }
 

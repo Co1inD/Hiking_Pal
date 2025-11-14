@@ -2,6 +2,7 @@
 #include "hardware/spi.h"
 #include <stdio.h>
 #include <math.h>
+#include <stdlib.h>
 
 void send_spi_cmd(spi_inst_t* spi, uint16_t value);
 void send_spi_data(spi_inst_t* spi, uint16_t value);
@@ -32,6 +33,11 @@ void display_print();
 #define PIN_CS    33
 #define PIN_SCK   34
 #define PIN_MOSI  35
+
+const int SPI_DISP_SCK = 10;
+const int SPI_DISP_CSn = 9;
+const int SPI_DISP_TX = 11;
+
 
 // --- Helper Functions ---
 void cs_low()  { gpio_put(PIN_CS, 0); }
@@ -92,6 +98,8 @@ int main() {
     gpio_init(PIN_CS);
     gpio_set_dir(PIN_CS, GPIO_OUT);
     cs_high();
+    init_chardisp_pins();
+    cd_init();
 
     printf("MS56xx SPI Demo on RP2350B\n");
 
@@ -102,6 +110,8 @@ int main() {
     for (int i = 0; i < 8; i++) {
         C[i] = cmd_prom(i);
     }
+
+    sleep_ms(5);
 
     while (1) {
         uint32_t D1 = cmd_adc(CMD_ADC_D1 + CMD_ADC_4096);
@@ -115,22 +125,31 @@ int main() {
         double P = (((D1 * SENS) / pow(2, 21) - OFF) / pow(2, 15)) / 100.0;
 
         printf("Temp: %.2f C | Pressure: %.2f mbar\n", T, P);
-        sleep_ms(1);
 
-        /* char str_buffer1[100];
-        char str_buffer2[100];
+       char str_buffer1[16];
+char str_buffer2[16];
 
-        sprintf(str_buffer1, "%.2f", T);
-        sprintf(str_buffer2, "%.2f", P);
+// Convert float to string
+snprintf(str_buffer1, sizeof(str_buffer1), "%.2fC", T);
+snprintf(str_buffer2, sizeof(str_buffer2), "%.2fmbar", P);
 
-        init_chardisp_pins();
-        cd_init();
-        cd_display1(str_buffer1);
-        cd_display2(str_buffer2);  */
-    }
+// Pad with spaces to make exactly 16 characters
+int len1 = strlen(str_buffer1);
+for(int i = len1; i < 16; i++) {
+    str_buffer1[i] = ' ';
+}
+str_buffer1[15] = '\0';  // ensure null termination
 
-    init_chardisp_pins();
-    cd_init();
-    cd_display1("ECE 362 is the  ");
-    cd_display2("course for you! ");
+int len2 = strlen(str_buffer2);
+for(int i = len2; i < 16; i++) {
+    str_buffer2[i] = ' ';
+}
+str_buffer2[15] = '\0';
+
+// Send to display
+cd_display1(str_buffer1);
+cd_display2(str_buffer2);
+sleep_ms(1000);
+
+}
 }
