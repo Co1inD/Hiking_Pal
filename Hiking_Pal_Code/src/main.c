@@ -1,8 +1,13 @@
 #include "pico/stdlib.h"
 #include "hardware/spi.h"
+#include "hardware/timer.h"
+#include "hardware/irq.h"
+#include "hardware/adc.h"
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
 
 void send_spi_cmd(spi_inst_t* spi, uint16_t value);
 void send_spi_data(spi_inst_t* spi, uint16_t value);
@@ -33,6 +38,9 @@ void display_print();
 #define PIN_CS    33
 #define PIN_SCK   34
 #define PIN_MOSI  35
+#define VREF_VOLTS 3.3f
+#define UV_GPIO 46          
+#define UV_ADC_INPUT 6
 
 const int SPI_DISP_SCK = 10;
 const int SPI_DISP_CSn = 9;
@@ -85,9 +93,29 @@ uint16_t cmd_prom(uint8_t coef_num) {
     return (b1 << 8) | b2;
 }
 
+void init_adc() {
+adc_init(); 
+adc_gpio_init(46); 
+adc_select_input(6); 
+}
+
+uint16_t read_adc() {
+return adc_read();
+
+}
+
+void init_adc_freerun() {
+    adc_init();
+    adc_gpio_init(46);
+    adc_select_input(6);
+    adc_run(1);
+}
+
+
 // --- Main ---
 int main() {
     stdio_init_all();
+    init_adc_freerun();
 
     // SPI setup
     spi_init(SPI_PORT, 20000 * 1000); // 20 MHz
@@ -112,6 +140,36 @@ int main() {
     }
 
     sleep_ms(5);
+    for(;;) {
+       uint16_t raw = adc_hw->result & 0x0FFF;     
+    float volts = (raw * VREF_VOLTS) / 4095.0f;  
+    float uvi = volts / 0.1f;                   
+
+    // Terminal print
+    printf("Raw: %4u | Voltage: %.3f V | UV Index: %.2f\n", raw, volts, uvi);
+
+    // LCD buffers (16 chars per line)
+    char str_buffer1[16];
+    char str_buffer2[16];
+
+    // Format first line: Raw and Voltage
+    snprintf(str_buffer1, sizeof(str_buffer1), "Raw:%4u %.3fV", raw, volts);
+    int len1 = strlen(str_buffer1);
+    for(int i = len1; i < 16; i++) str_buffer1[i] = ' ';
+    str_buffer1[15] = '\0';
+
+    // Format second line: UV index
+    snprintf(str_buffer2, sizeof(str_buffer2), "UV:%.2f", uvi);
+    int len2 = strlen(str_buffer2);
+    for(int i = len2; i < 16; i++) str_buffer2[i] = ' ';
+    str_buffer2[15] = '\0';
+
+    // Send to LCD
+    cd_display1(str_buffer1);
+    cd_display2(str_buffer2);
+
+    sleep_ms(250);
+    }
 
     while (1) {
         uint32_t D1 = cmd_adc(CMD_ADC_D1 + CMD_ADC_4096);
