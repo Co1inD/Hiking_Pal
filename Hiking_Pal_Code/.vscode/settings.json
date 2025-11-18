@@ -3,6 +3,7 @@
         "dma.h": "c",
         "stdio.h": "c",
         "string.h": "c",
-        "stdlib.h": "c"
+        "stdlib.h": "c",
+        "math.h": "c"
     }
 }

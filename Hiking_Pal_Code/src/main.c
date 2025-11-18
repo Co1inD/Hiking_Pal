@@ -3,6 +3,7 @@
 #include "hardware/timer.h"
 #include "hardware/irq.h"
 #include "hardware/adc.h"
+#include "hardware/i2c.h"
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
@@ -41,6 +42,12 @@ void display_print();
 #define VREF_VOLTS 3.3f
 #define UV_GPIO 46          
 #define UV_ADC_INPUT 6
+
+//I2C
+#define I2C_PORT      i2c1
+#define I2C_SDA_PIN   26   
+#define I2C_SCL_PIN   27
+#define GNSS_ADDR     0x42  // u-blox SAM-M8Q I2C address
 
 const int SPI_DISP_SCK = 10;
 const int SPI_DISP_CSn = 9;
@@ -112,6 +119,30 @@ void init_adc_freerun() {
 }
 
 
+void initialize_i2C()
+{
+    i2c_init(I2C_PORT, 100 * 1000);
+    gpio_set_function(I2C_SDA_PIN, GPIO_FUNC_I2C);
+    gpio_set_function(I2C_SCL_PIN, GPIO_FUNC_I2C);
+}
+
+
+bool gps_connected() {
+    // Attempt to write zero bytes to the GPS; returns number of bytes written or error code
+ for (int addr = 1; addr < 127; addr++) {
+    char* a = "$GPDTM,W84,,0.0,N,0.0,E,0.0,W84*6F";
+    int ret = //i2c write here
+    if (ret > 0) {
+        printf("Device detected at 0x%02X\n", addr);
+    }
+    else
+    {
+        printf("Device not detected");
+    }
+}  return true;
+    }
+
+
 // --- Main ---
 int main() {
     stdio_init_all();
@@ -128,6 +159,28 @@ int main() {
     cs_high();
     init_chardisp_pins();
     cd_init();
+    
+    
+    
+    initialize_i2C();
+    sleep_ms(100);
+      while (!gps_connected()) {
+        sleep_ms(1000); // Retry every second
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     printf("MS56xx SPI Demo on RP2350B\n");
 
