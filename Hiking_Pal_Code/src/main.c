@@ -56,7 +56,7 @@ void cs_high() { gpio_put(PIN_CS, 1); }
 // ------------------------------------------------------------
 // GPIO IRQ for mode switching
 // ------------------------------------------------------------
-volatile int mode = 1;
+ int mode = 0;
 
 void change_mode_isr() {
     gpio_acknowledge_irq(26, GPIO_IRQ_EDGE_RISE);
